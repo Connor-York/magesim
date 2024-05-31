@@ -46,26 +46,10 @@ function main(args)
 
             for step in 1:cf.timeout
                 t = @elapsed begin
-                    # if step % 10 == 0
-                    #     println(step)
-                    # end
-                    if step == cf.timeout*1/4
-                        #print(step)
-                        #println(cf.timeout*1/4)
-                        flag = 1
-                    elseif step == cf.timeout*2/4
-                        flag = 2
-                    elseif step == cf.timeout*3/4
-                        flag = 3
-                    else
-                        flag = 0
-                    end
-                    # println(flag)
-                    # println(step)
-                    step_agents!(agents, world, cf.multithreaded)
-                    world_running, world, _ = world_step(world, agents, flag)
-                    
 
+                    step_agents!(agents, world, cf.multithreaded)
+                    world_running, world, _ = world_step(world, agents)
+                    
 
                     if !headless
                         gtk_running = update_window!(world, agents, actual_speedup, builder)
@@ -74,6 +58,7 @@ function main(args)
                     if cf.do_log && step % log_frequency == 0 
                         for agent in agents
                             log(agent, logger, step)
+                            log(world, logger, step)
                         end
                     end
                 end

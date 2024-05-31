@@ -47,6 +47,7 @@ mutable struct Config
     do_log::Bool
     # User-defined config
     custom_config::UserConfig
+    stationary_agents::Array{Bool, 1}
 end
 
 struct Logger
@@ -97,7 +98,7 @@ end
 
 # --- Node + map types
 
-struct NodeValues
+mutable struct NodeValues
     """
     For python wrapping purposes, the only types supported in NodeValues are String, Int, Float, Bool, 
     and 1-d Array of these types
@@ -112,9 +113,10 @@ struct NodeValues
     If you do not wish to use the PettingZoo wrapper, you may disregard the above comments.
     """
     is_reward::Array{Any, 1}
+    idleness::Float64
 
     function NodeValues(is_reward::Array{<:Any, 1})
-        new(is_reward)
+        new(is_reward, 0.0)
     end   
 end
 
@@ -205,6 +207,7 @@ end
 
 mutable struct AgentValues
     li::Float64
+    stationarity::Bool
     cumulative_reward::Float64
     belief_nodes_rewarding::Array{Int64,1}
     belief_nodes_unrewarding::Array{Int64,1}
@@ -216,8 +219,8 @@ mutable struct AgentValues
     n_agents_belief::Int64
 
 
-    function AgentValues(id, custom_config, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.lis[id], 0.0, [], [], [], [], zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents)
+    function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
+        new(custom_config.lis[id], stationary_flag, 0.0, [], [], [], [], zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents)
     end
 end
 
@@ -235,9 +238,9 @@ mutable struct AgentState
     outbox::Queue{AbstractMessage}
     world_state_belief::Union{WorldState, Nothing}
 
-    function AgentState(id::Int64, start_node_idx::Int64, start_node_pos::Position, n_agents::Int64, n_nodes::Int64, comm_range::Float64, check_los::Bool, speed::Float64, custom_config::UserConfig)
+    function AgentState(id::Int64, start_node_idx::Int64, start_node_pos::Position, n_agents::Int64, n_nodes::Int64, comm_range::Float64, check_los::Bool, speed::Float64, custom_config::UserConfig, stationary_flag::Bool)
 
-        values = AgentValues(id, custom_config, n_agents::Int64, n_nodes::Int64)
+        values = AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
         new(id, start_node_pos, values, Queue{AbstractAction}(), start_node_idx, speed, comm_range, check_los, 10.0, Queue{AbstractMessage}(), Queue{AbstractMessage}(), nothing)    
     end
 end

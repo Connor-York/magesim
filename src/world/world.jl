@@ -63,31 +63,22 @@ end
 
 Return updated world state and reward allocated to agents
 """
-function world_step(world_state::WorldState, agents::Array{AgentState, 1}, flag::Int64)
-    # read csv in
-    # generate updated_values
-    # new_nodes::Array{Node, 1} = [Node(n, updated_values[i]) for (i, n) in enumerate(world_state.nodes)]
-    rewards2_path = "configs/rewards2.csv"
-    rewards3_path = "configs/rewards3.csv"
-    rewards4_path = "configs/rewards4.csv"
-    if flag == 1
-        updated_values = Matrix(CSV.read(rewards2_path, DataFrame, header=false))
-        new_nodes::Array{Node, 1} = [Node(n, NodeValues(updated_values[i, :])) for (i, n) in enumerate(world_state.nodes)]
-        updated_world_state = WorldState(new_nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
-        println("World state updated to rewards2 ======")
-    elseif flag == 2
-        updated_values = Matrix(CSV.read(rewards3_path, DataFrame, header=false))
-        new_nodes = [Node(n, NodeValues(updated_values[i, :])) for (i, n) in enumerate(world_state.nodes)]
-        updated_world_state = WorldState(new_nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
-        println("World state updated to rewards3 ======")
-    elseif flag == 3
-        updated_values = Matrix(CSV.read(rewards4_path, DataFrame, header=false))
-        new_nodes = [Node(n, NodeValues(updated_values[i, :])) for (i, n) in enumerate(world_state.nodes)]
-        updated_world_state = WorldState(new_nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
-        println("World state updated to rewards4 =====")
-    else
-        updated_world_state = WorldState(world_state.nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
+function world_step(world_state::WorldState, agents::Array{AgentState, 1})
+
+    nodes = copy(world_state.nodes)
+    for node in nodes
+        if node isa Node
+            node.values.idleness += 1.0
+            for agent in agents
+                if agent.graph_position isa Int64 && agent.graph_position == node.id
+                    node.values.idleness = 0.0
+                end
+            end
+        end
     end
+
+    updated_world_state = WorldState(world_state.nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
+
 
   
     rewards = zeros(Float64, length(agents))

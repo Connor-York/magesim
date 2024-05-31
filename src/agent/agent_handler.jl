@@ -28,7 +28,8 @@ function spawn_agents(world::WorldState, config::Config)
             config.comm_range,
             config.check_los, 
             config.agent_speed,
-            config.custom_config)
+            config.custom_config,
+            config.stationary_agents[i])
         observe_world!(agents[i], world)
     end
 

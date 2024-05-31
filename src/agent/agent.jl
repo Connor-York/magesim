@@ -166,43 +166,44 @@ function make_decisions!(agent::AgentState)
                 end
 
                 #  GO TO NEXT NODE -------------------------
-                if patrol_method == "CGG"
-                    if agent.graph_position == 25
-                        next_node = 1
-                        #println("ended route going back to 1")
-                        enqueue!(agent.action_queue, MoveToAction(next_node))
-                    else 
-                        next_node = agent.graph_position + 1
-                        enqueue!(agent.action_queue, MoveToAction(next_node))
-                    end
-
-
-                elseif patrol_method == "SEBS"
-                    
-                    neighbours = get_neighbours(agent.graph_position, agent.world_state_belief, true)
-
-                    if length(neighbours) == 1
-                        enqueue!(agent.action_queue, MoveToAction(neighbours[1]))
-                    elseif !isa(agent.graph_position, Int64)
-                        # Catch the potential problem of an agent needing a new action
-                        # while midway between two nodes (not covered by algo) - 
-                        # solution to this is just to pick one
-                        enqueue!(agent.action_queue, MoveToAction(neighbours[1]))
-                    else
-                        # Do SEBS
-                        gains = map(n -> calculate_gain(n, agent), neighbours)
-                        posteriors = map(g -> calculate_posterior(g, agent), gains)
-                        n_intentions::Array{Int64, 1} = zeros(agent.world_state_belief.n_nodes)
-                        for i in agent.values.intention_log
-                            if i != 0 n_intentions[i] += 1 end
+                if !agent.values.stationarity
+                    if patrol_method == "CGG"
+                        if agent.graph_position == 25
+                            next_node = 1
+                            #println("ended route going back to 1")
+                            enqueue!(agent.action_queue, MoveToAction(next_node))
+                        else 
+                            next_node = agent.graph_position + 1
+                            enqueue!(agent.action_queue, MoveToAction(next_node))
                         end
-                        intention_weights = map(n -> calculate_intention_weight(n, agent), n_intentions)
-                        final_posteriors = [posteriors[i] * intention_weights[neighbours[i]] for i in 1:length(posteriors)]
-                        target = neighbours[argmax(final_posteriors)]
-                        enqueue!(agent.action_queue, MoveToAction(target))
-                        enqueue!(agent.outbox, ArrivedAtNodeMessage(agent, nothing, (agent.graph_position, target)))
-                    end
 
+
+                    elseif patrol_method == "SEBS"
+                        
+                        neighbours = get_neighbours(agent.graph_position, agent.world_state_belief, true)
+
+                        if length(neighbours) == 1
+                            enqueue!(agent.action_queue, MoveToAction(neighbours[1]))
+                        elseif !isa(agent.graph_position, Int64)
+                            # Catch the potential problem of an agent needing a new action
+                            # while midway between two nodes (not covered by algo) - 
+                            # solution to this is just to pick one
+                            enqueue!(agent.action_queue, MoveToAction(neighbours[1]))
+                        else
+                            # Do SEBS
+                            gains = map(n -> calculate_gain(n, agent), neighbours)
+                            posteriors = map(g -> calculate_posterior(g, agent), gains)
+                            n_intentions::Array{Int64, 1} = zeros(agent.world_state_belief.n_nodes)
+                            for i in agent.values.intention_log
+                                if i != 0 n_intentions[i] += 1 end
+                            end
+                            intention_weights = map(n -> calculate_intention_weight(n, agent), n_intentions)
+                            final_posteriors = [posteriors[i] * intention_weights[neighbours[i]] for i in 1:length(posteriors)]
+                            target = neighbours[argmax(final_posteriors)]
+                            enqueue!(agent.action_queue, MoveToAction(target))
+                            enqueue!(agent.outbox, ArrivedAtNodeMessage(agent, nothing, (agent.graph_position, target)))
+                        end
+                    end
                 end
             end
         end
@@ -231,7 +232,7 @@ function scan_tag!(agent::AgentState, tag::Int64, tag_value::Bool)
         end
         push!(agent.values.recent_scans_unrewarding,tag)
     end
-    enqueue!(agent.action_queue, WaitAction(10)) #scanned then wait to simulate time taken
+    #enqueue!(agent.action_queue, WaitAction(10)) #scanned then wait to simulate time taken
 end
 
 

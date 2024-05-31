@@ -32,7 +32,7 @@ function load_configs(conf_arg::String, sweep_arg::String)
         li_range = sweep_config["custom_config"]
         n_agents = conf_dict["n_agents"]
 
-        p = collect(product([li_range for _ in [1:n_agents]...]...))
+        p = collect(product([li_range for _ in [1:n_agents]...]...))la1
         all_combinations = map(collect, reshape(p, size(li_range)[1]^n_agents))
         unique_combinations = collect(Set(map(sort, all_combinations)))
 
@@ -76,9 +76,12 @@ function process_config_dict(config_dict::Dict{String, Any})
     comm_range::Float64 = config_dict["comm_range"]
     check_los::Bool = config_dict["check_los"]
     agent_speed::Float64 = config_dict["agent_speed"]
+  
 
     # Custom config loading
     custom_config::UserConfig = UserConfig(config_dict["custom_config"])
+    stationary_agents::Array{Bool, 1} = config_dict["stationary_agents"]
+
 
     config = Config(
         world_fpath, 
@@ -94,7 +97,8 @@ function process_config_dict(config_dict::Dict{String, Any})
         timeout,
         multithreaded,
         do_log,
-        custom_config
+        custom_config,
+        stationary_agents
     )
 
     return config
