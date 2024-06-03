@@ -79,31 +79,31 @@ function make_decisions!(agent::AgentState)
     while !isempty(agent.inbox)
         message = dequeue!(agent.inbox)
 
-        # Message handling
-        if message isa TagMessage #tag stuff
-            # if agent.id == 1
-            #     println(message.reward_message)
-            #     println(message.unreward_message)
-            # end
+        # # Message handling
+        # if message isa TagMessage #tag stuff
+        #     # if agent.id == 1
+        #     #     println(message.reward_message)
+        #     #     println(message.unreward_message)
+        #     # end
 
-            for tag in message.reward_message # first row, rewarding tags
-                if !(tag in agent.values.belief_nodes_rewarding)
-                    push!(agent.values.belief_nodes_rewarding)
-                end
-                if tag in agent.values.belief_nodes_unrewarding
-                    agent.values.belief_nodes_unrewarding = filter(x -> x!=tag, agent.values.belief_nodes_unrewarding)
-                end
-            end
+        #     for tag in message.reward_message # first row, rewarding tags
+        #         if !(tag in agent.values.belief_nodes_rewarding)
+        #             push!(agent.values.belief_nodes_rewarding)
+        #         end
+        #         if tag in agent.values.belief_nodes_unrewarding
+        #             agent.values.belief_nodes_unrewarding = filter(x -> x!=tag, agent.values.belief_nodes_unrewarding)
+        #         end
+        #     end
 
-            for tag in message.unreward_message # second row, unrewarding tags
-                if !(tag in agent.values.belief_nodes_unrewarding)
-                    push!(agent.values.belief_nodes_unrewarding)
-                end
-                if tag in agent.values.belief_nodes_rewarding
-                    agent.values.belief_nodes_rewarding = filter(x -> x!=tag, agent.values.belief_nodes_rewarding)
-                end
-            end
-        end
+        #     for tag in message.unreward_message # second row, unrewarding tags
+        #         if !(tag in agent.values.belief_nodes_unrewarding)
+        #             push!(agent.values.belief_nodes_unrewarding)
+        #         end
+        #         if tag in agent.values.belief_nodes_rewarding
+        #             agent.values.belief_nodes_rewarding = filter(x -> x!=tag, agent.values.belief_nodes_rewarding)
+        #         end
+        #     end
+        # end
 
         if message isa ArrivedAtNodeMessage #SEBS
             agent.values.idleness_log[message.message[1]] = 0.0
@@ -118,52 +118,12 @@ function make_decisions!(agent::AgentState)
     if !isnothing(agent.world_state_belief) #Give next action
         if isempty(agent.action_queue) #if action queue is empty 
             if agent.graph_position isa Int64 # if at a node 
-                # if agent.id == 1 
-                #     print("At node ")
-                #     print(agent.graph_position)
-                #     println(" -----")
+
+                # if !isempty(agent.values.recent_scans_rewarding) || !isempty(agent.values.recent_scans_unrewarding) #if theres data to share 
+                #     enqueue!(agent.outbox, TagMessage(agent, nothing, agent.values.recent_scans_rewarding, agent.values.recent_scans_unrewarding))
+                #     agent.values.recent_scans_rewarding = [] #sent message now can clear recent scans and continue onto next node
+                #     agent.values.recent_scans_unrewarding = []
                 # end
-                tag_values = agent.world_state_belief.nodes[agent.graph_position].values.is_reward
-                for (index,tag_value) in enumerate(tag_values)
-                    tag = ((agent.graph_position - 1) * 4) + index
-                    if tag in agent.values.belief_nodes_rewarding || tag in agent.values.belief_nodes_unrewarding #if seen before
-                        if tag in agent.values.belief_nodes_rewarding
-                            # if agent.id == 1 
-                            #     println("Scanning tag believed rewarding")
-                            # end
-                            scan_tag!(agent, tag, tag_value)
-                        else
-                            chance_to_scan = 1 - agent.values.li
-                            if rand() <= chance_to_scan #scan
-                                # if agent.id == 1 
-                                #     println("Scanning tag believed unrewarding")
-                                # end
-                                scan_tag!(agent, tag, tag_value)
-                            # else
-                            #     if agent.id == 1 
-                            #         println("Not scanning tag believed unrewarding")
-                            #     end
-                            end
-                        end
-                    else #if not seen before
-                        # if agent.id == 1 
-                        #     println("Scanning tag not seen before")
-                        # end
-                        scan_tag!(agent, tag, tag_value)
-                    end
-                end
-
-                # println("========")
-                # println(agent.id)
-                # println(agent.values.belief_nodes_rewarding)
-                # println(agent.values.belief_nodes_unrewarding)
-                # println("========")
-
-                if !isempty(agent.values.recent_scans_rewarding) || !isempty(agent.values.recent_scans_unrewarding) #if theres data to share 
-                    enqueue!(agent.outbox, TagMessage(agent, nothing, agent.values.recent_scans_rewarding, agent.values.recent_scans_unrewarding))
-                    agent.values.recent_scans_rewarding = [] #sent message now can clear recent scans and continue onto next node
-                    agent.values.recent_scans_unrewarding = []
-                end
 
                 #  GO TO NEXT NODE -------------------------
                 if !agent.values.stationarity
@@ -213,27 +173,27 @@ function make_decisions!(agent::AgentState)
 end
 
 
-function scan_tag!(agent::AgentState, tag::Int64, tag_value::Bool)
-    if tag_value #rewarding
-        if tag in agent.values.belief_nodes_unrewarding
-            agent.values.belief_nodes_unrewarding = filter(x -> x!=tag, agent.values.belief_nodes_unrewarding)
-        end
-        if !(tag in agent.values.belief_nodes_rewarding)
-            push!(agent.values.belief_nodes_rewarding,tag)
-        end
-        agent.values.cumulative_reward += 1
-        push!(agent.values.recent_scans_rewarding,tag)
-    else #not rewarding
-        if tag in agent.values.belief_nodes_rewarding
-            agent.values.belief_nodes_rewarding = filter(x -> x!=tag, agent.values.belief_nodes_rewarding)
-        end
-        if !(tag in agent.values.belief_nodes_unrewarding)
-            push!(agent.values.belief_nodes_unrewarding,tag) 
-        end
-        push!(agent.values.recent_scans_unrewarding,tag)
-    end
-    #enqueue!(agent.action_queue, WaitAction(10)) #scanned then wait to simulate time taken
-end
+# function scan_tag!(agent::AgentState, tag::Int64, tag_value::Bool)
+#     if tag_value #rewarding
+#         if tag in agent.values.belief_nodes_unrewarding
+#             agent.values.belief_nodes_unrewarding = filter(x -> x!=tag, agent.values.belief_nodes_unrewarding)
+#         end
+#         if !(tag in agent.values.belief_nodes_rewarding)
+#             push!(agent.values.belief_nodes_rewarding,tag)
+#         end
+#         agent.values.cumulative_reward += 1
+#         push!(agent.values.recent_scans_rewarding,tag)
+#     else #not rewarding
+#         if tag in agent.values.belief_nodes_rewarding
+#             agent.values.belief_nodes_rewarding = filter(x -> x!=tag, agent.values.belief_nodes_rewarding)
+#         end
+#         if !(tag in agent.values.belief_nodes_unrewarding)
+#             push!(agent.values.belief_nodes_unrewarding,tag) 
+#         end
+#         push!(agent.values.recent_scans_unrewarding,tag)
+#     end
+#     #enqueue!(agent.action_queue, WaitAction(10)) #scanned then wait to simulate time taken
+# end
 
 
 function calculate_gain(node::Int64, agent::AgentState)

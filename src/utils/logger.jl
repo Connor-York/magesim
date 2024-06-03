@@ -94,7 +94,7 @@ function log(target::WorldState, logger::Logger, timestep::Int)
     header_contents = ["node_$n" for n in [1:1:target.n_nodes...]]
     idlenesses = [node.values.idleness for node in target.nodes if node isa Node]
 
-    fpath = string(logger.log_directory, "world.csv") 
+    fpath = string(logger.log_directory, "$(logger.run_n)_world.csv") 
 
     if !isfile(fpath)
         header = make_line("timestep", string.(header_contents))

@@ -45,8 +45,10 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
     
     node_xs = [node.position.x / sf for node in world_state.nodes]
     node_ys = [node.position.y / sf for node in world_state.nodes]
-    agent_xs = [agent.position.x / sf for agent in agents]
-    agent_ys = [agent.position.y / sf for agent in agents]
+    smart_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true]
+    smart_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true]
+    agent_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == false]
+    agent_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == false]
 
     x_size=600
 
@@ -87,7 +89,9 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
 
         # Draw agents and nodes
         scatter!(node_xs[1:world_state.n_nodes], node_ys[1:world_state.n_nodes], markercolor=:red)
-        show(io, MIME("image/png"), scatter!(agent_xs, agent_ys, markercolor=:blue))
+        scatter!(agent_xs, agent_ys, markercolor=:blue)
+        scatter!(smart_node_xs, smart_node_ys, markercolor=:green)
+        show(io, MIME("image/png"), current())
         img = read_from_png(io)
         set_source_surface(ctx, img, 0, 0)
         paint(ctx)

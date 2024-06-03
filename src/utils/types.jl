@@ -271,6 +271,28 @@ struct StringMessage <: AbstractMessage
     end
 end
 
+struct RecruitMessage <: AbstractMessage
+    source::Int64
+    targets::Union{Array{Int64, 1}, Nothing}
+    message::Array{Int64,1}
+
+    function RecruitMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Array{Int64,1})
+
+        new(agent.id, targets, message)
+    end
+end
+
+struct RecruitRepsonse <: AbstractMessage
+    source::Int64
+    targets::Union{Array{Int64, 1}, Nothing}
+    message::Array{Int64,1}
+
+    function RecruitRepsonse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Array{Int64,1})
+
+        new(agent.id, targets, message)
+    end
+end
+
 struct TagMessage <: AbstractMessage
     source::Int64
     targets::Union{Array{Int64, 1}, Nothing}
