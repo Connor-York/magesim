@@ -1,8 +1,8 @@
 {
 	"world": "office",
-	"headless": false,
-	"n_agents": 6,
-	"agent_starts": [11, 16, 1, 6, 2, 4],
+	"headless": true,
+	"n_agents": 9,
+	"agent_starts": [1,10,18,25,2,6,11,17,22],
 	"speedup": 10000,
 	"timeout": 10000,
 	"multithreaded": true,
@@ -10,6 +10,6 @@
 	"comm_range": 9999,
 	"check_los": false,
 	"agent_speed": 0.4,
-	"custom_config": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
-	"stationary_agents": [0, 0, 0, 0, 1, 1]
+	"custom_config": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0,1.0,1.0,1.0],
+	"stationary_agents": [0,0,0,0,1,1,1,1,1]
 }

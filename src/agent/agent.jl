@@ -74,7 +74,7 @@ Read messages and modify agent's action queue based on received messages, world 
 internal values
 """
 function make_decisions!(agent::AgentState)
-    patrol_method::String = "SEBS"
+    patrol_method::String = "SEBS" #CGG or SEBS
 
     while !isempty(agent.inbox)
         message = dequeue!(agent.inbox)
