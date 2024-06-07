@@ -50,6 +50,7 @@ function main(args)
                     step_agents!(agents, world, cf.multithreaded)
                     world_running, world, _ = world_step(world, agents)
                     
+                    println("Step: ", step)
 
                     if !headless
                         gtk_running = update_window!(world, agents, actual_speedup, builder)

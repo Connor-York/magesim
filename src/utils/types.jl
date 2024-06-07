@@ -209,18 +209,17 @@ mutable struct AgentValues
     li::Float64
     stationarity::Bool
     cumulative_reward::Float64
-    belief_nodes_rewarding::Array{Int64,1}
-    belief_nodes_unrewarding::Array{Int64,1}
-    recent_scans_rewarding::Array{Int64,1}
-    recent_scans_unrewarding::Array{Int64,1}
     #SEBS
     intention_log::Array{Int64, 1}
     idleness_log::Array{Float64, 1}
     n_agents_belief::Int64
+    #recruitment
+    free::Bool
+    recruitment_bids::Array{Tuple{Float64,AbstractMessage},1}
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.lis[id], stationary_flag, 0.0, [], [], [], [], zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents)
+        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, true, []) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -273,35 +272,26 @@ end
 
 struct RecruitMessage <: AbstractMessage
     source::Int64
-    targets::Union{Array{Int64, 1}, Nothing}
-    message::Array{Int64,1}
+    targets::Union{Array{Int64, 1}, Int64, Nothing}
+    order::Bool
+    smart_node_position::Int64
 
-    function RecruitMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Array{Int64,1})
+    function RecruitMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Int64, Nothing}, order::Bool)
 
-        new(agent.id, targets, message)
+        new(agent.id, targets, order, agent.graph_position)
     end
 end
 
-struct RecruitRepsonse <: AbstractMessage
+struct RecruitResponse <: AbstractMessage
     source::Int64
-    targets::Union{Array{Int64, 1}, Nothing}
-    message::Array{Int64,1}
+    targets::Union{Array{Int64, 1}, Int64, Nothing}
+    free::Bool
+    stubborness::Float64
+    agent_position::Position
 
-    function RecruitRepsonse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Array{Int64,1})
+    function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing})
 
-        new(agent.id, targets, message)
-    end
-end
-
-struct TagMessage <: AbstractMessage
-    source::Int64
-    targets::Union{Array{Int64, 1}, Nothing}
-    reward_message::Array{Int64,1}
-    unreward_message::Array{Int64,1}
-
-    function TagMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, reward_message::Array{Int64,1}, unreward_message::Array{Int64,1})
-
-        new(agent.id, targets, reward_message, unreward_message)
+        new(agent.id, targets, agent.values.free, agent.values.li, agent.position)
     end
 end
 
