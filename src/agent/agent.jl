@@ -120,8 +120,8 @@ function make_decisions!(agent::AgentState)
         end
     end
 
-    if length(agent.values.recruitment_bids) == 4 #all agents have responded
-        sort!(agent.values.recruitment_bids, by = x -> x[1], rev=true)
+    if length(agent.values.recruitment_bids) > 0 #atleast one agent has responded
+        sort!(agent.values.recruitment_bids, by = x -> x[1])
         for i in agent.values.recruitment_bids
             if i[2].free[1] == true
                 println("Sending message to agent $(i[2].source)")
@@ -139,8 +139,8 @@ function make_decisions!(agent::AgentState)
 
     if !isnothing(agent.world_state_belief) #Give next action
         #println("agent $(agent.id) is $(agent.values.stationarity)")
-        if agent.values.stationarity && agent.id == 9
-            if agent.world_state_belief.time == 200 # simulated anomaly for 
+        if agent.values.stationarity
+            if rand() < 0.01 # chance for anomaly //agent.world_state_belief.time == 200
                 agent.values.anomalous = true
                 enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # send out recruit message 
                 println("RECRUIT MESSAGE SENT")
@@ -151,10 +151,7 @@ function make_decisions!(agent::AgentState)
 
                 if !agent.values.stationarity && agent.values.free[1] == false
                     # do the thing at the node? 
-                    println("agent $(agent.id) is AT TEH NODE IT NEEDS TO BE AT ")
                     enqueue!(agent.action_queue, WaitAction(10)) # wait ten secs 
-                    # enqueue!(agent.action_queue, )
-                    # agent.values.free = true # finished the action 
                 end
 
 
