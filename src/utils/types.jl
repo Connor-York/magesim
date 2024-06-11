@@ -214,12 +214,13 @@ mutable struct AgentValues
     idleness_log::Array{Float64, 1}
     n_agents_belief::Int64
     #recruitment
-    free::Bool
+    free::Tuple{Bool, Int64} #free, and if not, who working for
     recruitment_bids::Array{Tuple{Float64,AbstractMessage},1}
+    anomalous::Bool
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, true, []) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], false) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -291,7 +292,16 @@ struct RecruitResponse <: AbstractMessage
 
     function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing})
 
-        new(agent.id, targets, agent.values.free, agent.values.li, agent.position)
+        new(agent.id, targets, agent.values.free[1], agent.values.li, agent.position)
+    end
+end
+
+struct MissionComplete <: AbstractMessage
+    source::Int64
+    targets::Union{Array{Int64, 1}, Nothing}
+
+    function MissionComplete(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing})
+        new(agent.id, targets)
     end
 end
 

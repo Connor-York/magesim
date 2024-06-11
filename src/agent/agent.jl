@@ -1,6 +1,6 @@
 module Agent
 
-import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse
+import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete
 import ..AgentDynamics: calculate_next_position
 import ..Utils: get_neighbours, pos_distance
 using DataStructures
@@ -27,6 +27,10 @@ function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Po
         new_graph_pos = agent.graph_position
         action.duration -= 1
         if action.duration <= 0
+            if agent.values.free[1] == false
+                agent.values.free = (true, agent.values.free[2])
+                enqueue!(agent.outbox, MissionComplete(agent, [agent.values.free[2]]))
+            end
             action_done = true
         else
             action_done = false
@@ -79,19 +83,26 @@ function make_decisions!(agent::AgentState)
     while !isempty(agent.inbox)
         message = dequeue!(agent.inbox)
 
+        if message isa MissionComplete
+            agent.values.anomalous = false
+        end
+
         if !agent.values.stationarity #agents interact here
             if message isa RecruitMessage && message.order == false
                 enqueue!(agent.outbox, RecruitResponse(agent, [message.source])) # respond
                 println("agent received recruit message, and responded")
+
             elseif message isa RecruitMessage && message.order == true
                 println("agent received order")
-                if agent.values.free == true # This should be redundant but just in case
-                    println("Agent received order and is free")
+
+                if agent.values.free[1] == true # This should be redundant but just in case
+                    println("Agent $(agent.id) received order and is free")
                     empty!(agent.action_queue) # Clear current action queue
                     enqueue!(agent.action_queue, MoveToAction(message.smart_node_position)) # head to that place
-                    agent.values.free = false # agent is busy now until it completes that task
-                    println("agent acted on order")
-                elseif agent.values.free == false
+                    agent.values.free = (false, message.source) # agent is busy now until it completes that task
+                    println("agent $(agent.id) acted on order")
+
+                elseif agent.values.free[1] == false
                     println("ERROR -- THIS SHOULD NOT HAPPEN -- AGENT $(agent.id) IS NOT FREE BUT RECEIVED AN ORDER")
                 end
             end
@@ -110,9 +121,9 @@ function make_decisions!(agent::AgentState)
     end
 
     if length(agent.values.recruitment_bids) == 4 #all agents have responded
-        sort!(agent.values.recruitment_bids, by = x -> x[1])
+        sort!(agent.values.recruitment_bids, by = x -> x[1], rev=true)
         for i in agent.values.recruitment_bids
-            if i[2].free == true
+            if i[2].free[1] == true
                 println("Sending message to agent $(i[2].source)")
                 enqueue!(agent.outbox, RecruitMessage(agent, [i[2].source], true))
                 empty!(agent.values.recruitment_bids) # clear the bids 
@@ -130,6 +141,7 @@ function make_decisions!(agent::AgentState)
         #println("agent $(agent.id) is $(agent.values.stationarity)")
         if agent.values.stationarity && agent.id == 9
             if agent.world_state_belief.time == 200 # simulated anomaly for 
+                agent.values.anomalous = true
                 enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # send out recruit message 
                 println("RECRUIT MESSAGE SENT")
             end
@@ -137,10 +149,12 @@ function make_decisions!(agent::AgentState)
         if isempty(agent.action_queue) #if action queue is empty 
             if agent.graph_position isa Int64 # if at a node 
 
-                if !agent.values.stationarity && agent.values.free == false
+                if !agent.values.stationarity && agent.values.free[1] == false
                     # do the thing at the node? 
-                    enqueue!(agent.action_queue, WaitAction(1000000))
-                    agent.values.free = true # finished the action 
+                    println("agent $(agent.id) is AT TEH NODE IT NEEDS TO BE AT ")
+                    enqueue!(agent.action_queue, WaitAction(10)) # wait ten secs 
+                    # enqueue!(agent.action_queue, )
+                    # agent.values.free = true # finished the action 
                 end
 
 
@@ -191,29 +205,6 @@ function make_decisions!(agent::AgentState)
         #rand(1:agent.world_state_belief.n_nodes)
     end
 end
-
-
-# function scan_tag!(agent::AgentState, tag::Int64, tag_value::Bool)
-#     if tag_value #rewarding
-#         if tag in agent.values.belief_nodes_unrewarding
-#             agent.values.belief_nodes_unrewarding = filter(x -> x!=tag, agent.values.belief_nodes_unrewarding)
-#         end
-#         if !(tag in agent.values.belief_nodes_rewarding)
-#             push!(agent.values.belief_nodes_rewarding,tag)
-#         end
-#         agent.values.cumulative_reward += 1
-#         push!(agent.values.recent_scans_rewarding,tag)
-#     else #not rewarding
-#         if tag in agent.values.belief_nodes_rewarding
-#             agent.values.belief_nodes_rewarding = filter(x -> x!=tag, agent.values.belief_nodes_rewarding)
-#         end
-#         if !(tag in agent.values.belief_nodes_unrewarding)
-#             push!(agent.values.belief_nodes_unrewarding,tag) 
-#         end
-#         push!(agent.values.recent_scans_unrewarding,tag)
-#     end
-#     #enqueue!(agent.action_queue, WaitAction(10)) #scanned then wait to simulate time taken
-# end
 
 
 function calculate_gain(node::Int64, agent::AgentState)

@@ -45,10 +45,18 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
     
     node_xs = [node.position.x / sf for node in world_state.nodes]
     node_ys = [node.position.y / sf for node in world_state.nodes]
-    smart_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true]
-    smart_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true]
-    agent_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == false]
-    agent_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == false]
+
+
+    smart_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous == false]
+    smart_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous == false]
+    anomalous_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous == true]
+    anomalous_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous == true]
+
+
+    agent_free_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == false && agent.values.free[1] == true]
+    agent_free_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == false && agent.values.free[1] == true]
+    agent_busy_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == false && agent.values.free[1] == false]
+    agent_busy_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == false && agent.values.free[1] == false]
 
     x_size=600
 
@@ -88,9 +96,11 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
         end
 
         # Draw agents and nodes
-        scatter!(node_xs[1:world_state.n_nodes], node_ys[1:world_state.n_nodes], markercolor=:red)
-        scatter!(agent_xs, agent_ys, markercolor=:blue)
-        scatter!(smart_node_xs, smart_node_ys, markercolor=:green)
+        scatter!(node_xs[1:world_state.n_nodes], node_ys[1:world_state.n_nodes], markercolor=:blue)
+        scatter!(agent_free_xs, agent_free_ys, markercolor=:green)
+        scatter!(agent_busy_xs, agent_busy_ys, markercolor=:red)
+        scatter!(smart_node_xs, smart_node_ys, markercolor=:orange)
+        scatter!(anomalous_node_xs, anomalous_node_ys, markercolor=:purple)
         show(io, MIME("image/png"), current())
         img = read_from_png(io)
         set_source_surface(ctx, img, 0, 0)
