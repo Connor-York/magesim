@@ -88,6 +88,10 @@ Base.@kwdef mutable struct WaitAction <: AbstractAction
     duration::Int64 = 1
 end
 
+Base.@kwdef mutable struct ScanAction <: AbstractAction
+    duration::Int64 = 10
+end
+
 struct MoveToAction <: AbstractAction
     target::Int64
 end
@@ -215,12 +219,12 @@ mutable struct AgentValues
     n_agents_belief::Int64
     #recruitment
     free::Tuple{Bool, Int64} #free, and if not, who working for
-    recruitment_bids::Array{Tuple{Float64,AbstractMessage},1}
-    anomalous::Bool
+    recruitment_bids::Array{Tuple{Float64,AbstractMessage},1} #responses for smart nodes or orders for agents (if received multiple)
+    anomalous::Tuple{Bool, Int64} #anomalous, and timestep they became anomalous
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], false) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0)) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -287,12 +291,13 @@ struct RecruitResponse <: AbstractMessage
     source::Int64
     targets::Union{Array{Int64, 1}, Int64, Nothing}
     free::Bool
+    rejection::Bool
     stubborness::Float64
     agent_position::Position
 
-    function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing})
+    function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, rejection::Bool)
 
-        new(agent.id, targets, agent.values.free[1], agent.values.li, agent.position)
+        new(agent.id, targets, agent.values.free[1], rejection, agent.values.li, agent.position)
     end
 end
 
