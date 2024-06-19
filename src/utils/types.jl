@@ -153,6 +153,8 @@ struct Node <: AbstractNode
         label = node_dict["label"]
         position = Position(node_dict["position"]["x"] * scale_factor, 
                             node_dict["position"]["y"] * scale_factor)
+        # position = Position(node_dict["position"]["x"], 
+        #                     node_dict["position"]["y"])
         neighbours = node_dict["neighbours"]
         values = NodeValues(node_dict["values"])
 
@@ -294,10 +296,12 @@ struct RecruitResponse <: AbstractMessage
     rejection::Bool
     stubborness::Float64
     agent_position::Position
+    agent_graph_position::Union{AbstractEdge, Int64}
+    world_state_belief::Union{WorldState, Nothing}
 
     function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, rejection::Bool)
 
-        new(agent.id, targets, agent.values.free[1], rejection, agent.values.li, agent.position)
+        new(agent.id, targets, agent.values.free[1], rejection, agent.values.li, agent.position, agent.graph_position, agent.world_state_belief)
     end
 end
 

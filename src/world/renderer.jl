@@ -42,7 +42,7 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
     GAccessor.text(speedup, string(round(actual_speedup, digits=1)))
 
     sf = world_state.scale_factor
-    
+
     node_xs = [node.position.x / sf for node in world_state.nodes]
     node_ys = [node.position.y / sf for node in world_state.nodes]
 
@@ -60,6 +60,10 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
 
 
     x_size=600
+
+    # println([node.position.x for node in world_state.nodes])
+    # println(sf)
+    # println(node_xs)
 
     @guarded draw(canvas) do widget
         ctx = getgc(canvas)

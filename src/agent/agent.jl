@@ -2,7 +2,7 @@ module Agent
 
 import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, ScanAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete
 import ..AgentDynamics: calculate_next_position
-import ..Utils: get_neighbours, pos_distance
+import ..Utils: get_neighbours, pos_distance, get_distances
 using DataStructures
 
 """
@@ -124,7 +124,7 @@ function make_decisions!(agent::AgentState)
             if message isa RecruitResponse
 
                 if message.rejection == false
-                    distance = pos_distance(agent.position, message.agent_position)
+                    distance = get_distances(message.agent_graph_position, message.agent_position, message.world_state_belief)[agent.graph_position]
                     push!(agent.values.recruitment_bids, (distance, message))
                 elseif message.rejection == true
                     enqueue!(agent.outbox, RecruitMessage(agent, nothing, false))
@@ -207,6 +207,7 @@ function make_decisions!(agent::AgentState)
         end
 
     end
+
 
     if !isnothing(agent.world_state_belief) #Give next action
         #println("agent $(agent.id) is $(agent.values.stationarity)")
