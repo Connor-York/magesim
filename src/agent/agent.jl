@@ -124,6 +124,7 @@ function make_decisions!(agent::AgentState)
             if message isa RecruitResponse
 
                 if message.rejection == false
+                    stubbornness = message.stubborness
                     distance = get_distances(message.agent_graph_position, message.agent_position, message.world_state_belief)[agent.graph_position]
                     push!(agent.values.recruitment_bids, (distance, message))
                 elseif message.rejection == true

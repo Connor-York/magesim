@@ -18,7 +18,7 @@ struct Position
 end
 
 struct UserConfig
-    lis::Array{Float64, 1}
+    stubborns::Array{Float64, 1}
 
     function UserConfig(args...)
         new(args[1])
@@ -58,7 +58,7 @@ struct Logger
 
         # log_directory = string("logs/", Dates.format(now(), "yyyymmdd_HH:MM:SS/"))
         # log_directory = string("logs/", Dates.format(now(), "yyyymmdd_HH:MM:SS/"), config.custom_config.lis, "/")
-        log_directory = string("logs/", config.custom_config.lis, "/")
+        log_directory = string("logs/", config.custom_config.stubborns, "/")
 
         if !isdir(log_directory)
             Base.Filesystem.mkpath(log_directory)
@@ -212,7 +212,7 @@ end
 # --- Agent types ---
 
 mutable struct AgentValues
-    li::Float64
+    stubborn::Float64
     stationarity::Bool
     cumulative_reward::Float64
     #SEBS
@@ -226,7 +226,7 @@ mutable struct AgentValues
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.lis[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0)) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0)) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -301,7 +301,7 @@ struct RecruitResponse <: AbstractMessage
 
     function RecruitResponse(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, rejection::Bool)
 
-        new(agent.id, targets, agent.values.free[1], rejection, agent.values.li, agent.position, agent.graph_position, agent.world_state_belief)
+        new(agent.id, targets, agent.values.free[1], rejection, agent.values.stubborn, agent.position, agent.graph_position, agent.world_state_belief)
     end
 end
 
