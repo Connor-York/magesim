@@ -124,9 +124,10 @@ function make_decisions!(agent::AgentState)
             if message isa RecruitResponse
 
                 if message.rejection == false
-                    stubbornness = message.stubborness
+                    stubborness = message.stubborness
                     distance = get_distances(message.agent_graph_position, message.agent_position, message.world_state_belief)[agent.graph_position]
-                    push!(agent.values.recruitment_bids, (distance, message))
+                    value = distance * stubborness
+                    push!(agent.values.recruitment_bids, (value, message))
                 elseif message.rejection == true
                     enqueue!(agent.outbox, RecruitMessage(agent, nothing, false))
                 end
@@ -187,11 +188,17 @@ function make_decisions!(agent::AgentState)
                 end
             else
                 sort!(agent.values.recruitment_bids, by=x->x[1])
+                if agent.id == 5
+                    println("SN: $(agent.id) received $(length(agent.values.recruitment_bids)) responses")
+                    for i in agent.values.recruitment_bids
+                        println("Response from agent: $(i[2].source) = $(i[1]), distance = $(get_distances(i[2].agent_graph_position, i[2].agent_position, agent.world_state_belief)[agent.graph_position])")
+                    end
+                end
                 chosen = false
                 for i in agent.values.recruitment_bids
                     if i[2].free[1] == true
                         enqueue!(agent.outbox, RecruitMessage(agent, [i[2].source], true))
-                        #println("SN: $(agent.id) sending recruit order to AGENT $(i[2].source)")
+                        println("SN: $(agent.id) sending recruit order to AGENT $(i[2].source)")
                         chosen = true
                         break
                     end
