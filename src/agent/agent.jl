@@ -216,6 +216,7 @@ function make_decisions!(agent::AgentState)
 
     end
 
+    println("Agent_ID $(agent.id), stationarity = $(agent.values.stationarity), stubborness = $(agent.values.stubborn)")
 
     if !isnothing(agent.world_state_belief) #Give next action
         #println("agent $(agent.id) is $(agent.values.stationarity)")
