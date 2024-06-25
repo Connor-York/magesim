@@ -58,7 +58,10 @@ function main(args)
 
                     if cf.do_log && step % log_frequency == 0 
                         for agent in agents
-                            log(agent, logger, step)
+                            if agent.values.time_to_respond_log > 0
+                                log(agent, logger, step)
+                                agent.values.time_to_respond_log = 0
+                            end
                             log(world, logger, step)
                         end
                     end
@@ -72,6 +75,7 @@ function main(args)
                 end
             end
 
+        
             stop_world()
         end
     end

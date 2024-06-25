@@ -10,21 +10,21 @@ using Dates
 Log AgentState data
 """
 function log(target::AgentState, logger::Logger, timestep::Int)
-    fpath = string(logger.log_directory, "$(target.id)/$(logger.run_n)_Rewards.csv") 
+    fpath = string(logger.log_directory, "$(target.id)/$(logger.run_n)_Time_to_respond.csv") 
 
     if !isdir(string(logger.log_directory, "$(target.id)/"))
         Base.Filesystem.mkpath(string(logger.log_directory, "$(target.id)/"))
     end
 
     if !isfile(fpath)
-        header = "reward, timestep"
+        header = "time_to_respond_log, timestep"
         open(fpath, "w") do file
             write(file, header)
             write(file,"\n")
         end
     end
 
-    csv_line = "$(target.values.cumulative_reward), $(string(timestep))"
+    csv_line = "$(target.values.time_to_respond_log), $(string(timestep))"
 
     open(fpath, "a") do file
         write(file, csv_line)

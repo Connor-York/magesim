@@ -118,6 +118,7 @@ function make_decisions!(agent::AgentState)
         elseif agent.values.stationarity # smart_nodes
         
             if message isa MissionComplete
+                agent.values.time_to_respond_log = agent.world_state_belief.time - agent.values.anomalous[2]
                 agent.values.anomalous = (false, 0)
             end
 
@@ -216,7 +217,7 @@ function make_decisions!(agent::AgentState)
 
     end
 
-    println("Agent_ID $(agent.id), stationarity = $(agent.values.stationarity), stubborness = $(agent.values.stubborn)")
+    #println("Agent_ID $(agent.id), stationarity = $(agent.values.stationarity), stubborness = $(agent.values.stubborn)")
 
     if !isnothing(agent.world_state_belief) #Give next action
         #println("agent $(agent.id) is $(agent.values.stationarity)")

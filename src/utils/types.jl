@@ -223,10 +223,11 @@ mutable struct AgentValues
     free::Tuple{Bool, Int64} #free, and if not, who working for
     recruitment_bids::Array{Tuple{Float64,AbstractMessage},1} #responses for smart nodes or orders for agents (if received multiple)
     anomalous::Tuple{Bool, Int64} #anomalous, and timestep they became anomalous
+    time_to_respond_log::Int64
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0)) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0),0) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 

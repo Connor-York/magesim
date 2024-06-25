@@ -1,6 +1,6 @@
 {
 	"world": "office",
-	"headless": false,
+	"headless": true,
 	"n_agents": 9,
 	"agent_starts": [1,10,18,25,2,6,11,17,22],
 	"speedup": 10000,
