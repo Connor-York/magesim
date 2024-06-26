@@ -62,8 +62,9 @@ function main(args)
                                 log(agent, logger, step)
                                 agent.values.time_to_respond_log = 0
                             end
-                            log(world, logger, step)
+                            #log(world, logger, step)
                         end
+                        log(world, logger, step)
                     end
                 end
 
