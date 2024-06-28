@@ -88,6 +88,10 @@ Base.@kwdef mutable struct WaitAction <: AbstractAction
     duration::Int64 = 1
 end
 
+Base.@kwdef mutable struct DelayAction <: AbstractAction
+    duration::Int64 = 60
+end
+
 Base.@kwdef mutable struct ScanAction <: AbstractAction
     duration::Int64 = 10
 end

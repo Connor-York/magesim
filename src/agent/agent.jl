@@ -1,6 +1,6 @@
 module Agent
 
-import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, ScanAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete
+import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, ScanAction, DelayAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete
 import ..AgentDynamics: calculate_next_position
 import ..Utils: get_neighbours, pos_distance, get_distances
 using DataStructures
@@ -42,6 +42,17 @@ function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Po
                 enqueue!(agent.outbox, MissionComplete(agent, [agent.values.free[2]]))
             end
             #println("Agent finished scan 2")
+            action_done = true
+        else
+            action_done = false
+        end
+    elseif action isa DelayAction
+        new_pos = agent.position
+        new_graph_pos = agent.graph_position
+        action.duration -= 1
+        if action.duration <= 0
+            enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # delay done send another order
+            println("SN $(agent.id) finished delay after rejection/ no response sending another recruitment")
             action_done = true
         else
             action_done = false
@@ -107,7 +118,12 @@ function make_decisions!(agent::AgentState)
                     enqueue!(agent.outbox, RecruitResponse(agent, [message.source], false)) # send out response, not rejection
                 elseif message.order == true
                     if agent.values.free[1]
-                        push!(agent.values.recruitment_bids, (0.0, message))
+                        r = rand()
+                        if r > agent.values.stubborn
+                            push!(agent.values.recruitment_bids, (0.0, message))
+                        else
+                            enqueue!(agent.outbox, RecruitResponse(agent, [message.source], true)) # send out response, rejection
+                        end
                     elseif !agent.values.free[1]
                         enqueue!(agent.outbox, RecruitResponse(agent, [message.source], true)) # send out response, rejection
                     end
@@ -130,7 +146,7 @@ function make_decisions!(agent::AgentState)
                     value = distance * stubborness
                     push!(agent.values.recruitment_bids, (value, message))
                 elseif message.rejection == true
-                    enqueue!(agent.outbox, RecruitMessage(agent, nothing, false))
+                    enqueue!(agent.action_queue, DelayAction())
                 end
 
             end
@@ -184,7 +200,7 @@ function make_decisions!(agent::AgentState)
                     enqueue!(agent.outbox, RecruitMessage(agent, [agent.values.recruitment_bids[1][2].source], true))
                     #println("SN: $(agent.id) sending recruit order to AGENT $(agent.values.recruitment_bids[1][2].source)")
                 elseif agent.values.recruitment_bids[1][2].free[1] == false
-                    enqueue!(agent.outbox, RecruitMessage(agent, nothing, false))
+                    enqueue!(agent.action_queue, DelayAction())
                     #println("SN: $(agent.id) not able to recruit AGENT $(agent.values.recruitment_bids[1][2].source) because it responded 'busy', sending general message again")
                 end
             else
@@ -206,7 +222,7 @@ function make_decisions!(agent::AgentState)
                 end
 
                 if chosen == false
-                    enqueue!(agent.outbox, RecruitMessage(agent, nothing, false))
+                    enqueue!(agent.action_queue, DelayAction())
                     #println("SN: $(agent.id), not chosen to recruit any, trying again")
                 end
             end

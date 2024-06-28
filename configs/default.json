@@ -10,6 +10,6 @@
 	"comm_range": 9999,
 	"check_los": false,
 	"agent_speed": 0.4,
-	"custom_config": [0.0,0.3,0.7,1.0, 1.0, 1.0,1.0,1.0,1.0],
+	"custom_config": [0.7, 0.8, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0],
 	"stationary_agents": [0,0,0,0,1,1,1,1,1]
 }
