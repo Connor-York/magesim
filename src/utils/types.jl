@@ -93,7 +93,7 @@ Base.@kwdef mutable struct DelayAction <: AbstractAction
 end
 
 Base.@kwdef mutable struct ScanAction <: AbstractAction
-    duration::Int64 = 10
+    duration::Int64 = 100 
 end
 
 struct MoveToAction <: AbstractAction

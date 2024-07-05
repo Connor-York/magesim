@@ -5,11 +5,13 @@ import ..AgentDynamics: calculate_next_position
 import ..Utils: get_neighbours, pos_distance, get_distances
 using DataStructures
 
+# RANDOMISE NODE response time? Agents want to compete for auctions? PLASTICITY?
 """
     agent_step!(agent::AgentState, world::WorldState)
 
 Select and perform an action and update agent position and stat accordingly
 """
+
 function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Position, 1})
 
     # Wait if no other action found
@@ -35,10 +37,11 @@ function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Po
         new_pos = agent.position
         new_graph_pos = agent.graph_position
         action.duration -= 1
+        enqueue!(agent.outbox, ArrivedAtNodeMessage(agent, nothing, (agent.graph_position, agent.graph_position))) #keep informing everyone they are here
         if action.duration <= 0
             if agent.values.free[1] == false # if agent completed a "scan", tell smart node
                 agent.values.free = (true, agent.values.free[2])
-                println("AGENT: $(agent.id) has finished scan at node $(agent.graph_position), and is now free")
+                #println("AGENT: $(agent.id) has finished scan at node $(agent.graph_position), and is now free")
                 enqueue!(agent.outbox, MissionComplete(agent, [agent.values.free[2]]))
             end
             #println("Agent finished scan 2")
@@ -52,7 +55,7 @@ function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Po
         action.duration -= 1
         if action.duration <= 0
             enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # delay done send another order
-            println("SN $(agent.id) finished delay after rejection/ no response sending another recruitment")
+            #println("SN $(agent.id) finished delay after rejection/ no response sending another recruitment")
             action_done = true
         else
             action_done = false
@@ -118,9 +121,9 @@ function make_decisions!(agent::AgentState)
                     enqueue!(agent.outbox, RecruitResponse(agent, [message.source], false)) # send out response, not rejection
                 elseif message.order == true
                     if agent.values.free[1]
-                        r = rand()
+                        r = 1.0 # rand()
                         if r > agent.values.stubborn
-                            push!(agent.values.recruitment_bids, (0.0, message))
+                            push!(agent.values.recruitment_bids, (0.0, message)) # send out response, acceptance
                         else
                             enqueue!(agent.outbox, RecruitResponse(agent, [message.source], true)) # send out response, rejection
                         end
@@ -162,30 +165,20 @@ function make_decisions!(agent::AgentState)
             if length(agent.values.recruitment_bids) == 1
                 empty!(agent.action_queue)
                 enqueue!(agent.action_queue, MoveToAction(agent.values.recruitment_bids[1][2].smart_node_position))
-                # println(agent.action_queue)
-                #println("AGENT: $(agent.id) received single order from $(agent.values.recruitment_bids[1][2].source)")
                 agent.values.free = (false, agent.values.recruitment_bids[1][2].source)
-                #println("AGENT: $(agent.id) is recruited, now busy. val = $(agent.values.free)")
-                #println(agent.action_queue)
 
             elseif length(agent.values.recruitment_bids) > 1 
-                println("AGENT: $(agent.id) received $(length(agent.values.recruitment_bids)) orders")
-                for bids in agent.values.recruitment_bids
-                    println("Order from agent: $(bids[2].source)")
-                end
+
                 # if received multiple orders in this timestep, choose one at random and reject the others
                 r = rand(1:length(agent.values.recruitment_bids))
-                println("Agent choosing index $(r)")
                 for (index, bid) in enumerate(agent.values.recruitment_bids)
                     if index == r
                         empty!(agent.action_queue)
                         enqueue!(agent.action_queue, MoveToAction(bid[2].smart_node_position))
-                        #println("AGENT: $(agent.id) chose order from SN: $(bid[2].source)")
-                        #println(agent.action_queue)
                         agent.values.free = (false, bid[2].source)
                     else
                         enqueue!(agent.outbox, RecruitResponse(agent, [bid[2].source], true))
-                        #println("AGENT: $(agent.id) rejected order from SN: $(bid[2].source)")
+
                     end
                 end
 
@@ -198,24 +191,15 @@ function make_decisions!(agent::AgentState)
             if length(agent.values.recruitment_bids) == 1
                 if agent.values.recruitment_bids[1][2].free[1] == true
                     enqueue!(agent.outbox, RecruitMessage(agent, [agent.values.recruitment_bids[1][2].source], true))
-                    #println("SN: $(agent.id) sending recruit order to AGENT $(agent.values.recruitment_bids[1][2].source)")
                 elseif agent.values.recruitment_bids[1][2].free[1] == false
                     enqueue!(agent.action_queue, DelayAction())
-                    #println("SN: $(agent.id) not able to recruit AGENT $(agent.values.recruitment_bids[1][2].source) because it responded 'busy', sending general message again")
                 end
             else
                 sort!(agent.values.recruitment_bids, by=x->x[1])
-                if agent.id == 5
-                    println("SN: $(agent.id) received $(length(agent.values.recruitment_bids)) responses")
-                    for i in agent.values.recruitment_bids
-                        println("Response from agent: $(i[2].source) = $(i[1]), distance = $(get_distances(i[2].agent_graph_position, i[2].agent_position, agent.world_state_belief)[agent.graph_position])")
-                    end
-                end
                 chosen = false
                 for i in agent.values.recruitment_bids
                     if i[2].free[1] == true
                         enqueue!(agent.outbox, RecruitMessage(agent, [i[2].source], true))
-                        println("SN: $(agent.id) sending recruit order to AGENT $(i[2].source)")
                         chosen = true
                         break
                     end
@@ -223,7 +207,6 @@ function make_decisions!(agent::AgentState)
 
                 if chosen == false
                     enqueue!(agent.action_queue, DelayAction())
-                    #println("SN: $(agent.id), not chosen to recruit any, trying again")
                 end
             end
 
@@ -233,30 +216,25 @@ function make_decisions!(agent::AgentState)
 
     end
 
-    #println("Agent_ID $(agent.id), stationarity = $(agent.values.stationarity), stubborness = $(agent.values.stubborn)")
+
 
     if !isnothing(agent.world_state_belief) #Give next action
-        #println("agent $(agent.id) is $(agent.values.stationarity)")
         if agent.values.stationarity && !agent.values.anomalous[1]
-            if rand() < 0.01 # chance for anomaly //agent.world_state_belief.time == 200
+            if rand() < 0.01 # chance for anomaly 
                 agent.values.anomalous = (true, agent.world_state_belief.time)
-                enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # send out recruit message 
+                enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) 
             end
         end
 
         if isempty(agent.action_queue) #if action queue is empty 
             if agent.graph_position isa Int64 # if at a node 
 
-                # if !agent.values.stationarity 
-                #     println("Agent $(agent.id) at node $(agent.graph_position)")
-                #     println("Agent $(agent.id) action queue:")
-                #     println(agent.action_queue)
-                # end
 
 
-                if !agent.values.stationarity && !agent.values.free[1] #if busy
-                    println("Agent $(agent.id) scanning at node $(agent.graph_position)")
-                    enqueue!(agent.action_queue, ScanAction()) # wait ten secs 
+                if !agent.values.stationarity && !agent.values.free[1] #if not free
+                    #r = rand(1:3)
+                    #delays[]
+                    enqueue!(agent.action_queue, ScanAction(100))
                 end
 
                 #  GO TO NEXT NODE ------------------------- 
@@ -264,7 +242,6 @@ function make_decisions!(agent::AgentState)
                     if patrol_method == "CGG"
                         if agent.graph_position == 25
                             next_node = 1
-                            #println("ended route going back to 1")
                             enqueue!(agent.action_queue, MoveToAction(next_node))
                         else 
                             next_node = agent.graph_position + 1

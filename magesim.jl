@@ -21,7 +21,7 @@ function main(args)
     if !headless
         builder = create_window()
     end
-
+    i = 1
     for cf in configs
 
         if !headless
@@ -29,11 +29,14 @@ function main(args)
         else
             speedup = cf.speedup
         end
+        println("")
+        print("------------------ Starting param_set $i / 495 ------------------")
+        i += 1
 
         for run_n in 1:10 # HOW MANY RUNS
             println("")
             print("Starting run: ")
-            println(run_n)
+            println("$(run_n) / 10")
             world = create_world(cf)
             agents = spawn_agents(world, cf)
             ts = 1/speedup
@@ -50,7 +53,7 @@ function main(args)
                     step_agents!(agents, world, cf.multithreaded)
                     world_running, world, _ = world_step(world, agents)
                     
-                    println("Step: ", step)
+                    #println("Step: ", step)
 
                     if !headless
                         gtk_running = update_window!(world, agents, actual_speedup, builder)
