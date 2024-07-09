@@ -30,7 +30,8 @@ function load_configs(conf_arg::String, sweep_arg::String)
     if "custom_config" in ks
 
         li_range = sweep_config["custom_config"]
-        n_agents = 4 #conf_dict["n_agents"]
+        n_agents = conf_dict["n_agents"] - sum(conf_dict["stationary_agents"])
+
 
         p = collect(product([li_range for _ in [1:n_agents]...]...))
         all_combinations = map(collect, reshape(p, size(li_range)[1]^n_agents))
