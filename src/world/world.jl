@@ -70,7 +70,7 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1})
         if node isa Node
             node.values.idleness += 1.0
             for agent in agents
-                if agent.graph_position isa Int64 && agent.graph_position == node.id
+                if !agent.values.stationarity && agent.graph_position isa Int64 && agent.graph_position == node.id
                     node.values.idleness = 0.0
                 end
             end

@@ -217,14 +217,16 @@ function make_decisions!(agent::AgentState)
     end
 
 
+    if agent.values.stationarity && !agent.values.anomalous[1]
+        if rand() < 0.01 # chance for anomaly 
+            agent.values.anomalous = (true, agent.world_state_belief.time)
+            enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) 
+        end
+    end
+
 
     if !isnothing(agent.world_state_belief) #Give next action
-        if agent.values.stationarity && !agent.values.anomalous[1]
-            if rand() < 0.01 # chance for anomaly 
-                agent.values.anomalous = (true, agent.world_state_belief.time)
-                enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) 
-            end
-        end
+
 
         if isempty(agent.action_queue) #if action queue is empty 
             if agent.graph_position isa Int64 # if at a node 
