@@ -68,9 +68,7 @@ function step_agents!(agents::Array{AgentState, 1},
         end
     
         Threads.@threads for agent in agents
-            if !agent.values.stationarity
-                observe_world!(agent, world)
-            end
+            observe_world!(agent, world)
         end
 
     else
@@ -89,9 +87,7 @@ function step_agents!(agents::Array{AgentState, 1},
         end
     
         for agent in agents
-            if !agent.values.stationarity
-                observe_world!(agent, world)
-            end
+            observe_world!(agent, world)
         end   
     end
 
@@ -130,9 +126,7 @@ function step_agents_(agents::Array{AgentState, 1},
         end
     
         Threads.@threads for agent in agents
-            if !agent.values.stationarity
-                observe_world!(agent, world)
-            end
+            observe_world!(agent, world)
         end
 
     else
@@ -151,9 +145,7 @@ function step_agents_(agents::Array{AgentState, 1},
         end
     
         for agent in agents
-            if !agent.values.stationarity
-                observe_world!(agent, world)
-            end
+            observe_world!(agent, world)
         end   
     end
 

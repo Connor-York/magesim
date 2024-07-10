@@ -88,9 +88,12 @@ world state, and generate messages to send to other agents
 """
 function observe_world!(agent::AgentState, world::WorldState)
     agent.world_state_belief = world
-    agent.values.idleness_log = [i + 1.0 for i in agent.values.idleness_log]
-    if agent.graph_position isa Int64 && agent.graph_position <= world.n_nodes
-        agent.values.idleness_log[agent.graph_position] = 0.0
+
+    if !agent.values.stationarity
+        agent.values.idleness_log = [i + 1.0 for i in agent.values.idleness_log]
+        if agent.graph_position isa Int64 && agent.graph_position <= world.n_nodes
+            agent.values.idleness_log[agent.graph_position] = 0.0
+        end
     end
     # enqueue!(agent.outbox, StringMessage(agent, nothing, string(agent.id)))
 end
