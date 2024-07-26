@@ -1,6 +1,6 @@
 include("src/utils/include.jl")
 
-import .Types: WorldState, AgentState, Logger, DummyNode, Config
+import .Types: WorldState, AgentState, Logger, DummyNode, Config, Node
 import .World: create_world, world_step, stop_world
 import .LogWriter: log
 import .WorldRenderer: create_window, update_window!, close_window
@@ -39,6 +39,18 @@ function main(args)
             println("$(run_n) / 10")
             world = create_world(cf)
             agents = spawn_agents(world, cf)
+
+            smart_node_positions = cf.agent_starts[cf.stationary_agents .== 1]
+            println("Start_Node_positions = ", smart_node_positions)
+
+            for node in world.nodes
+                if node isa Node
+                    if node.id in smart_node_positions
+                        node.values.smart = true
+                    end
+                end
+            end
+
             ts = 1/speedup
             actual_speedup = speedup
             gtk_running = true
@@ -53,6 +65,7 @@ function main(args)
                     step_agents!(agents, world, cf.multithreaded)
                     world_running, world, _ = world_step(world, agents)
                     
+                    
                     #println("Step: ", step)
 
                     if !headless
@@ -61,6 +74,8 @@ function main(args)
 
                     if cf.do_log && step % log_frequency == 0 
                         for agent in agents
+                            # println("Agent: ", agent.id)
+                            # println("agent time to respond: ", agent.values.time_to_respond_log)
                             if agent.values.time_to_respond_log > 0
                                 log(agent, logger, step)
                                 agent.values.time_to_respond_log = 0

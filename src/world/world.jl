@@ -68,18 +68,30 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1})
     nodes = copy(world_state.nodes)
     for node in nodes
         if node isa Node
+            #do code here :^)
+            """
+            if node isa smartnode 
+                node. anomalous = 1 given chance
+            else if 
+                node isa regular node
+                node, anomalous = 1 given chance
+                start counter
+                if counter ended, 
+                    node.anomalous = 0
+            end
+            """
             node.values.idleness += 1.0
-            for agent in agents
+            for agent in agents 
                 if !agent.values.stationarity && agent.graph_position isa Int64 && agent.graph_position == node.id
                     node.values.idleness = 0.0
                 end
             end
+
+
         end
     end
 
     updated_world_state = WorldState(world_state.nodes, world_state.n_nodes, world_state.map, world_state.obstacle_map, world_state.scale_factor, world_state.adj, world_state.paths, world_state.time + 1, world_state.done)  
-
-
   
     rewards = zeros(Float64, length(agents))
 

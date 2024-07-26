@@ -220,7 +220,7 @@ function make_decisions!(agent::AgentState)
     end
 
 
-    if agent.values.stationarity && !agent.values.anomalous[1]
+    if agent.values.stationarity && !agent.values.anomalous[1] # Give anomalies here
         if rand() < 0.01 # chance for anomaly 
             agent.values.anomalous = (true, agent.world_state_belief.time)
             enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) 
