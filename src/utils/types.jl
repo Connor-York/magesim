@@ -126,10 +126,11 @@ mutable struct NodeValues
     is_reward::Array{Any, 1}
     idleness::Float64
     anomalous::Tuple{Bool, Int64}
+    anomaly_counter::Int64
     smart::Bool
 
     function NodeValues(is_reward::Array{<:Any, 1})
-        new(is_reward, 0.0, (false, 0), false)
+        new(is_reward, 0.0, (false, 0), 0, false)
     end   
 end
 

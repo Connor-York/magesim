@@ -79,6 +79,10 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1}, confi
                 if counter ended, 
                     node.anomalous = 0
             end
+
+            println("c1: ", config.anomaly_chance_per_step)
+            println("c2: ", config.anomaly_duration)
+            println("c3: ", config.anomaly_likelihood_multiplier)
             """
             node.values.idleness += 1.0
             for agent in agents 
@@ -87,11 +91,21 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1}, confi
                 end
             end
 
-            if node.values.smart
-                println("c1: ", config.anomaly_chance_per_step)
-                println("c2: ", config.anomaly_duration)
-                println("c3: ", config.anomaly_likelihood_multiplier)
-            # elseif !node.values.smart
+            if !node.values.anomalous[1]
+                if node.values.smart #smart nodes have a higher chance of being anomalous because we assume they are placed -
+                                     #  - in high traffic areas
+                    if rand() < config.anomaly_chance_per_step * config.anomaly_likelihood_multiplier
+                        node.values.anomalous = (true, world_state.time)
+                    end
+                elseif !node.values.smart
+                    if rand() < config.anomaly_chance_per_step
+                        node.values.anomalous = (true, world_state.time)
+                    end
+                end
+            elseif node.values.anomalous[1]
+                if world_state.time - node.values.anomalous[2] > config.anomaly_duration
+                    node.values.anomalous = (false, 0)
+                end
             end
 
 
