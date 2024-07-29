@@ -41,7 +41,7 @@ function main(args)
             agents = spawn_agents(world, cf)
 
             smart_node_positions = cf.agent_starts[cf.stationary_agents .== 1]
-            println("Start_Node_positions = ", smart_node_positions)
+            # println("Start_Node_positions = ", smart_node_positions)
 
             for node in world.nodes
                 if node isa Node
@@ -63,7 +63,7 @@ function main(args)
                 t = @elapsed begin
 
                     step_agents!(agents, world, cf.multithreaded)
-                    world_running, world, _ = world_step(world, agents)
+                    world_running, world, _ = world_step(world, agents, cf)
                     
                     
                     #println("Step: ", step)

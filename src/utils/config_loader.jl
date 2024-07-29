@@ -85,6 +85,9 @@ function process_config_dict(config_dict::Dict{String, Any})
     # Custom config loading
     custom_config::UserConfig = UserConfig(config_dict["custom_config"])
     stationary_agents::Array{Bool, 1} = config_dict["stationary_agents"]
+    anomaly_chance_per_step::Float64 = config_dict["anomaly_chance_per_step"]
+	anomaly_duration::Int64 = config_dict["anomaly_duration"]
+	anomaly_likelihood_multiplier::Float64 = config_dict["anomaly_likelihood_multiplier"]
 
 
     config = Config(
@@ -102,7 +105,10 @@ function process_config_dict(config_dict::Dict{String, Any})
         multithreaded,
         do_log,
         custom_config,
-        stationary_agents
+        stationary_agents,
+        anomaly_chance_per_step,
+        anomaly_duration,
+        anomaly_likelihood_multiplier
     )
 
     return config

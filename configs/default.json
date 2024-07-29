@@ -11,5 +11,8 @@
 	"check_los": false,
 	"agent_speed": 0.4,
 	"custom_config": [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-	"stationary_agents": [0,0,0,0,1,1,1,1,1,1,1,1]
+	"stationary_agents": [0,0,0,0,1,1,1,1,1,1,1,1],
+	"anomaly_chance_per_step": 0.01,
+	"anomaly_duration": 100,
+	"anomaly_likelihood_multiplier": 1.5
 }

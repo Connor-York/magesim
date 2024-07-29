@@ -48,6 +48,9 @@ mutable struct Config
     # User-defined config
     custom_config::UserConfig
     stationary_agents::Array{Bool, 1}
+    anomaly_chance_per_step::Float64
+    anomaly_duration::Int64
+    anomaly_likelihood_multiplier::Float64
 end
 
 struct Logger

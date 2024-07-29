@@ -63,7 +63,7 @@ end
 
 Return updated world state and reward allocated to agents
 """
-function world_step(world_state::WorldState, agents::Array{AgentState, 1})
+function world_step(world_state::WorldState, agents::Array{AgentState, 1}, config::Config)
 
     nodes = copy(world_state.nodes)
     for node in nodes
@@ -85,6 +85,13 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1})
                 if !agent.values.stationarity && agent.graph_position isa Int64 && agent.graph_position == node.id
                     node.values.idleness = 0.0
                 end
+            end
+
+            if node.values.smart
+                println("c1: ", config.anomaly_chance_per_step)
+                println("c2: ", config.anomaly_duration)
+                println("c3: ", config.anomaly_likelihood_multiplier)
+            # elseif !node.values.smart
             end
 
 
