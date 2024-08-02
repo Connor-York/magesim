@@ -84,4 +84,20 @@ function get_real_adj(world::WorldState)
     return adj
 end
 
+function check_if_observed(anomalous_node::Int64, agent::AgentState)
+    """
+    Returns true if the node has been observed already
+    """
+    observed_nodes = agent.world_state_belief.observed_anomalies
+    flag = false
+
+    for node in observed_nodes
+        if node[1] == anomalous_node
+            flag = true
+        end
+    end
+
+    return flag
+end
+
 end

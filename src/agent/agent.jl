@@ -1,8 +1,8 @@
 module Agent
 
-import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, ScanAction, DelayAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete
+import ..Types: AgentState, WorldState, Position, AbstractAction, WaitAction, ScanAction, DelayAction, MoveToAction, StepTowardsAction, StringMessage, ArrivedAtNodeMessage, RecruitMessage, RecruitResponse, MissionComplete, ObservedNodeMessage
 import ..AgentDynamics: calculate_next_position
-import ..Utils: get_neighbours, pos_distance, get_distances
+import ..Utils: get_neighbours, pos_distance, get_distances, check_if_observed
 using DataStructures
 
 # RANDOMISE NODE response time? Agents want to compete for auctions? PLASTICITY?
@@ -36,16 +36,21 @@ function agent_step!(agent::AgentState, world::WorldState, blocked_pos::Array{Po
     elseif action isa ScanAction
         new_pos = agent.position
         new_graph_pos = agent.graph_position
+        if agent.id == 1
+            println("Agent $(agent.id) is scanning, time = $(action.duration)")
+        end
         action.duration -= 1
         enqueue!(agent.outbox, ArrivedAtNodeMessage(agent, nothing, (agent.graph_position, agent.graph_position))) #keep informing everyone they are here
         if action.duration <= 0
-            if agent.values.free[1] == false # if agent completed a "scan", tell smart node
+            if agent.values.free[1] == false 
+                if agent.values.free[2] != agent.id # if smart node
+                    enqueue!(agent.outbox, MissionComplete(agent, [agent.values.free[2]]))
+                end
                 agent.values.free = (true, agent.values.free[2])
-                #println("AGENT: $(agent.id) has finished scan at node $(agent.graph_position), and is now free")
-                enqueue!(agent.outbox, MissionComplete(agent, [agent.values.free[2]]))
             end
             #println("Agent finished scan 2")
             action_done = true
+            agent.values.reward_log += 1
         else
             action_done = false
         end
@@ -89,12 +94,54 @@ world state, and generate messages to send to other agents
 function observe_world!(agent::AgentState, world::WorldState)
     agent.world_state_belief = world
 
-    if !agent.values.stationarity
+    if !agent.values.stationarity #regular agents update idleness
         agent.values.idleness_log = [i + 1.0 for i in agent.values.idleness_log]
         if agent.graph_position isa Int64 && agent.graph_position <= world.n_nodes
             agent.values.idleness_log[agent.graph_position] = 0.0
         end
     end
+
+    """
+    if SN:
+        if node is anomalous
+            if SN is not anomalous
+                become anomalous & send out recruitment message
+                & mark as observed?
+    if RN and not busy: 
+        if node is anomalous
+            if not observed already
+                mark as observed
+                message others to tell
+                scan and get reward
+
+    """
+
+    if agent.values.stationarity && !agent.values.anomalous[1] # if you're already anomalous youve checked already, maybe redundant
+        if agent.world_state_belief.nodes[agent.graph_position].values.anomalous[1] # if current node is anomalous
+            if check_if_observed(agent.graph_position, agent) == false
+                agent.values.anomalous = agent.world_state_belief.nodes[agent.graph_position].values.anomalous
+                push!(agent.world_state_belief.observed_anomalies, (agent.graph_position, agent.world_state_belief.nodes[agent.graph_position].values.anomalous[2]))
+                enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) # send out recruitment message
+            end
+        end
+    elseif !agent.values.stationarity && agent.values.free[1] # busy agents dont check
+        if agent.graph_position isa Int64
+            if agent.world_state_belief.nodes[agent.graph_position].values.anomalous[1] # if current node is anomalous
+                if check_if_observed(agent.graph_position, agent) == false
+                    if agent.id == 1
+                        println("Agent $(agent.id) observing node $(agent.graph_position)")
+                    end
+                    agent.values.free = (false, agent.id)
+                    push!(agent.world_state_belief.observed_anomalies, (agent.graph_position, agent.world_state_belief.nodes[agent.graph_position].values.anomalous[2]))
+                    enqueue!(agent.outbox, ObservedNodeMessage(agent, nothing, (agent.graph_position, agent.world_state_belief.nodes[agent.graph_position].values.anomalous[2])))
+                    enqueue!(agent.action_queue, ScanAction())
+                else
+                    println("NODE HAS BEEN OBSERVED")
+                end
+            end
+        end
+    end
+
     # enqueue!(agent.outbox, StringMessage(agent, nothing, string(agent.id)))
 end
 
@@ -105,7 +152,7 @@ end
 Read messages and modify agent's action queue based on received messages, world state belief, and 
 internal values
 """
-function make_decisions!(agent::AgentState)
+function make_decisions!(agent::AgentState, anomaly_duration::Int64)
     patrol_method::String = "SEBS" #CGG or SEBS
 
     while !isempty(agent.inbox)
@@ -114,6 +161,12 @@ function make_decisions!(agent::AgentState)
         if message isa ArrivedAtNodeMessage #SEBS
             agent.values.idleness_log[message.message[1]] = 0.0
             agent.values.intention_log[message.source] = message.message[2]
+        end
+
+        if message isa ObservedNodeMessage
+            if check_if_observed(message.message[1], agent) == false
+                push!(agent.world_state_belief.observed_anomalies, message.message)
+            end
         end
 
         if !agent.values.stationarity # agents
@@ -159,7 +212,13 @@ function make_decisions!(agent::AgentState)
 
         end       
     end
-    
+
+    for node in agent.world_state_belief.observed_anomalies # clear timed out anomalies
+        if agent.world_state_belief.time - node[2] >= anomaly_duration
+            filter!(x -> x != node, agent.world_state_belief.observed_anomalies)
+        end
+    end
+
     #   messages parsed, choose from responses (recruitment for smart_nodes, orders for agents)
     if length(agent.values.recruitment_bids) > 0
 
@@ -218,15 +277,6 @@ function make_decisions!(agent::AgentState)
         end
 
     end
-
-
-    if agent.values.stationarity && !agent.values.anomalous[1] # Give anomalies here
-        if rand() < 0.01 # chance for anomaly 
-            agent.values.anomalous = (true, agent.world_state_belief.time)
-            enqueue!(agent.outbox, RecruitMessage(agent, nothing, false)) 
-        end
-    end
-
 
     if !isnothing(agent.world_state_belief) #Give next action
 

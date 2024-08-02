@@ -49,8 +49,11 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
 
     smart_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == false]
     smart_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == false]
-    anomalous_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == true]
-    anomalous_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == true]
+    anomalous_smart_node_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == true]
+    anomalous_smart_node_ys = [agent.position.y / sf for agent in agents if agent.values.stationarity == true && agent.values.anomalous[1] == true]
+
+    anomalous_node_xs = [node.position.x / sf for node in world_state.nodes if node.values.smart== false && node.values.anomalous[1] == true]
+    anomalous_node_ys = [node.position.y / sf for node in world_state.nodes if node.values.smart== false && node.values.anomalous[1] == true]
 
 
     agent_free_xs = [agent.position.x / sf for agent in agents if agent.values.stationarity == false && agent.values.free[1] == true]
@@ -103,7 +106,8 @@ function update_window!(world_state::WorldState, agents::Array{AgentState, 1}, a
         # Draw agents and nodes
         scatter!(node_xs[1:world_state.n_nodes], node_ys[1:world_state.n_nodes], markercolor=:blue)
         scatter!(smart_node_xs, smart_node_ys, markercolor=:orange)
-        scatter!(anomalous_node_xs, anomalous_node_ys, markercolor=:purple)
+        scatter!(anomalous_smart_node_xs, anomalous_smart_node_ys, markercolor=:purple)
+        scatter!(anomalous_node_xs, anomalous_node_ys, markercolor=:purple2)
         scatter!(agent_free_xs, agent_free_ys, markercolor=:green)
         scatter!(agent_busy_xs, agent_busy_ys, markercolor=:red)
         show(io, MIME("image/png"), current())

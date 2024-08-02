@@ -96,7 +96,7 @@ Base.@kwdef mutable struct DelayAction <: AbstractAction
 end
 
 Base.@kwdef mutable struct ScanAction <: AbstractAction
-    duration::Int64 = 100 
+    duration::Int64 = 60 
 end
 
 struct MoveToAction <: AbstractAction
@@ -191,6 +191,8 @@ struct WorldState
     paths::Graphs.FloydWarshallState  # Has fields dists, parents (for back-to-front navigation)
     time::Real
     done::Bool
+    observed_anomalies::Array{Tuple{Int64, Int64}, 1}
+    
     
     function WorldState(nodes::Array{<:AbstractNode, 1},
                         n_nodes::Int,
@@ -200,8 +202,9 @@ struct WorldState
                         adj::Union{Matrix{Float64}, Nothing}=nothing,
                         paths::Union{Graphs.AbstractPathState, Nothing}=nothing,
                         time::Float64=0.0, 
-                        done::Bool=false)
-
+                        done::Bool=false,
+                        observed_anomalies::Array{Tuple{Int64, Int64}, 1}=[(0,0)]
+                        )
         # TODO: sort all this out properly
 
         if adj === nothing
@@ -212,9 +215,9 @@ struct WorldState
 
         if paths === nothing
             generated_paths = floyd_warshall_shortest_paths(map)
-            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, generated_paths, time, done)
+            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, generated_paths, time, done, observed_anomalies)
         else
-            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, paths, time, done)
+            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, paths, time, done, observed_anomalies)
         end
     end
 end
@@ -234,10 +237,11 @@ mutable struct AgentValues
     recruitment_bids::Array{Tuple{Float64,AbstractMessage},1} #responses for smart nodes or orders for agents (if received multiple)
     anomalous::Tuple{Bool, Int64} #anomalous, and timestep they became anomalous
     time_to_respond_log::Int64
+    reward_log::Int64
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0),0) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0),0,0) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -322,6 +326,16 @@ struct MissionComplete <: AbstractMessage
 
     function MissionComplete(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing})
         new(agent.id, targets)
+    end
+end
+
+struct ObservedNodeMessage <: AbstractMessage
+    source::Int64
+    targets::Union{Array{Int64, 1}, Nothing}
+    message::Tuple{Int64, Int64}
+
+    function ObservedNodeMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Tuple{Int64, Int64})
+        new(agent.id, targets, message)
     end
 end
 

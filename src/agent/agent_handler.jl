@@ -45,7 +45,9 @@ messages between agents
 function step_agents!(agents::Array{AgentState, 1}, 
                       world::WorldState, 
                       multithreaded::Bool=true, 
-                      force_actions::Union{Bool, Array{Int64, 1}}=false)
+                      anomaly_duration::Int64=100,
+                      force_actions::Union{Bool, Array{Int64, 1}}=false 
+                      )
 
     # Note that WorldState MUST be immutable for this to guarantee thread-safety for custom user code
     # These are intentionally in sequential loops (multithreaded performance would be improved by having
@@ -59,7 +61,7 @@ function step_agents!(agents::Array{AgentState, 1},
                 empty!(agent.action_queue)
                 enqueue!(agent.action_queue, StepTowardsAction(force_actions[agent.id]))
             else
-                make_decisions!(agent)
+                make_decisions!(agent, anomaly_duration)
             end
         end
     
@@ -78,7 +80,7 @@ function step_agents!(agents::Array{AgentState, 1},
                 empty!(agent.action_queue)
                 enqueue!(agent.action_queue, StepTowardsAction(force_actions[agent.id]))
             else
-                make_decisions!(agent)
+                make_decisions!(agent, anomaly_duration)
             end
         end
     

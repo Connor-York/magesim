@@ -62,7 +62,7 @@ function main(args)
             for step in 1:cf.timeout
                 t = @elapsed begin
 
-                    step_agents!(agents, world, cf.multithreaded)
+                    step_agents!(agents, world, cf.multithreaded, cf.anomaly_duration)
                     world_running, world, _ = world_step(world, agents, cf)
                     
                     
@@ -77,12 +77,16 @@ function main(args)
                             # println("Agent: ", agent.id)
                             # println("agent time to respond: ", agent.values.time_to_respond_log)
                             if agent.values.time_to_respond_log > 0
-                                log(agent, logger, step)
+                                log(agent, logger, step, "time_to_respond")
                                 agent.values.time_to_respond_log = 0
                             end
+
+                            log(agent, logger, step, "reward")
                             #log(world, logger, step)
                         end
-                        log(world, logger, step)
+
+                        log(world, logger, step, "idleness")
+                        log(world, logger, step, "anomalies")
                     end
                 end
 

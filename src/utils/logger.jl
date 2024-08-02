@@ -9,27 +9,53 @@ using Dates
 
 Log AgentState data
 """
-function log(target::AgentState, logger::Logger, timestep::Int)
-    fpath = string(logger.log_directory, "$(target.id)/$(logger.run_n)_Time_to_respond.csv") 
+function log(target::AgentState, logger::Logger, timestep::Int, value::String)
 
-    if !isdir(string(logger.log_directory, "$(target.id)/"))
-        Base.Filesystem.mkpath(string(logger.log_directory, "$(target.id)/"))
-    end
+    if value == "time_to_respond"
+        fpath = string(logger.log_directory, "$(target.id)/$(logger.run_n)_Time_to_respond.csv") 
 
-    if !isfile(fpath)
-        header = "time_to_respond_log, timestep"
-        open(fpath, "w") do file
-            write(file, header)
+        if !isdir(string(logger.log_directory, "$(target.id)/"))
+            Base.Filesystem.mkpath(string(logger.log_directory, "$(target.id)/"))
+        end
+    
+        if !isfile(fpath)
+            header = "time_to_respond_log, timestep"
+            open(fpath, "w") do file
+                write(file, header)
+                write(file,"\n")
+            end
+        end
+    
+        csv_line = "$(target.values.time_to_respond_log), $(string(timestep))"
+    
+        open(fpath, "a") do file
+            write(file, csv_line)
+            write(file,"\n")
+        end
+    elseif value == "reward"
+
+        fpath = string(logger.log_directory, "$(target.id)/$(logger.run_n)_AgentReward.csv") 
+
+        if !isdir(string(logger.log_directory, "$(target.id)/"))
+            Base.Filesystem.mkpath(string(logger.log_directory, "$(target.id)/"))
+        end
+    
+        if !isfile(fpath)
+            header = "reward_log, timestep"
+            open(fpath, "w") do file
+                write(file, header)
+                write(file,"\n")
+            end
+        end
+    
+        csv_line = "$(target.values.reward_log), $(string(timestep))"
+    
+        open(fpath, "a") do file
+            write(file, csv_line)
             write(file,"\n")
         end
     end
 
-    csv_line = "$(target.values.time_to_respond_log), $(string(timestep))"
-
-    open(fpath, "a") do file
-        write(file, csv_line)
-        write(file,"\n")
-    end
 end
 
 """
@@ -76,7 +102,7 @@ function log(target::Node, logger::Logger, timestep:: Int)
         end
     end
 
-    csv_line = string(string(timestep, target.values.value_string))
+    csv_line = string(string(timestep, target.values.anomaly_counter))
 
     open(fpath, "a") do file
         write(file, csv_line)
@@ -89,27 +115,51 @@ end
 
 Log WorldState data
 """
-function log(target::WorldState, logger::Logger, timestep::Int)
+function log(target::WorldState, logger::Logger, timestep::Int, value::String)
 
-    header_contents = ["node_$n" for n in [1:1:target.n_nodes...]]
-    idlenesses = [node.values.idleness for node in target.nodes if node isa Node]
+    if value == "idleness"
+        header_contents = ["node_$n" for n in [1:1:target.n_nodes...]]
+        idlenesses = [node.values.idleness for node in target.nodes if node isa Node]
+    
+        fpath = string(logger.log_directory, "$(logger.run_n)_world.csv") 
+    
+        if !isfile(fpath)
+            header = make_line("timestep", string.(header_contents))
+            open(fpath, "w") do file
+                write(file, header)
+                write(file,"\n")
+            end
+        end
+    
+        csv_line = make_line(timestep, string.(idlenesses))
+    
+        open(fpath, "a") do file
+            write(file, csv_line)
+            write(file,"\n")
+        end
+    elseif value == "anomalies"
 
-    fpath = string(logger.log_directory, "$(logger.run_n)_world.csv") 
-
-    if !isfile(fpath)
-        header = make_line("timestep", string.(header_contents))
-        open(fpath, "w") do file
-            write(file, header)
+        header_contents = ["node_$n" for n in [1:1:target.n_nodes...]]
+        anomalies = [node.values.anomaly_counter for node in target.nodes if node isa Node]
+    
+        fpath = string(logger.log_directory, "$(logger.run_n)_world_anomalous.csv") 
+    
+        if !isfile(fpath)
+            header = make_line("timestep", string.(header_contents))
+            open(fpath, "w") do file
+                write(file, header)
+                write(file,"\n")
+            end
+        end
+    
+        csv_line = make_line(timestep, string.(anomalies))
+    
+        open(fpath, "a") do file
+            write(file, csv_line)
             write(file,"\n")
         end
     end
 
-    csv_line = make_line(timestep, string.(idlenesses))
-
-    open(fpath, "a") do file
-        write(file, csv_line)
-        write(file,"\n")
-    end
 end
 
 """
