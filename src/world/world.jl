@@ -96,14 +96,14 @@ function world_step(world_state::WorldState, agents::Array{AgentState, 1}, confi
                                      #  - in high traffic areas
                     if rand() < config.anomaly_chance_per_step * config.anomaly_likelihood_multiplier
                         node.values.anomalous = (true, world_state.time)
-                        println("NODE ANOMALY COUNTER GOING UP")
                         node.values.anomaly_counter += 1
+                        #println("Smart Node $(node.id) anomaly counter increasing to: $(node.values.anomaly_counter)")
                     end
                 elseif !node.values.smart
                     if rand() < config.anomaly_chance_per_step
                         node.values.anomalous = (true, world_state.time)
-                        println("NODE ANOMALY COUNTER GOING UP")
                         node.values.anomaly_counter += 1
+                        #println("Node $(node.id) anomaly counter increasing to: $(node.values.anomaly_counter)")
                     end
                 end
             elseif node.values.anomalous[1]

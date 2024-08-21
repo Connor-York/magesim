@@ -1,18 +1,18 @@
 {
 	"world": "office",
 	"headless": true,
-	"n_agents": 9,
-	"agent_starts": [11,14,9,19,1,25,7,18,21],
-	"speedup": 10000,
+	"n_agents": 12,
+	"agent_starts": [9,13,16,19,1,5,7,10,18,21,23,25],
+	"speedup": 100,
 	"timeout": 10000,
 	"multithreaded": true,
 	"do_log": true,
 	"comm_range": 9999,
 	"check_los": false,
 	"agent_speed": 0.4,
-	"custom_config": [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0],
-	"stationary_agents": [0,0,0,0,1,1,1,1,1],
-	"anomaly_chance_per_step": 0.01,
+	"custom_config": [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+	"stationary_agents": [0,0,0,0,1,1,1,1,1,1,1,1],
+	"anomaly_chance_per_step": 0.001,
 	"anomaly_duration": 100,
-	"anomaly_likelihood_multiplier": 1.5
+	"anomaly_likelihood_multiplier": 1
 }

@@ -7,6 +7,8 @@ import .WorldRenderer: create_window, update_window!, close_window
 import .AgentHandler: spawn_agents, step_agents!
 import .ConfigLoader: load_configs
 
+using Dates
+
 function main(args)
 
     if length(args) in [1, 2]
@@ -30,15 +32,17 @@ function main(args)
             speedup = cf.speedup
         end
         println("")
-        print("------------------ Starting param_set $i / 495 ------------------")
+        println("------------------ Starting param_set $i / 495 ------------------")
+        println("- $(Dates.format(now(), "HH:MM:SS")) -")
+        
         i += 1
 
-        for run_n in 1:10 # HOW MANY RUNS
+        for run_n in 1:10 # HOW MANY RUNS)
             println("")
             print("Starting run: ")
             println("$(run_n) / 10")
             world = create_world(cf)
-            agents = spawn_agents(world, cf)
+            agents = spawn_agents(world, cf, cf.anomaly_duration)
 
             smart_node_positions = cf.agent_starts[cf.stationary_agents .== 1]
             # println("Start_Node_positions = ", smart_node_positions)

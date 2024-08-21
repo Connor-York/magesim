@@ -17,7 +17,7 @@ struct Position
     y::Float64
 end
 
-struct UserConfig
+mutable struct UserConfig
     stubborns::Array{Float64, 1}
 
     function UserConfig(args...)
@@ -61,7 +61,14 @@ struct Logger
 
         # log_directory = string("logs/", Dates.format(now(), "yyyymmdd_HH:MM:SS/"))
         # log_directory = string("logs/", Dates.format(now(), "yyyymmdd_HH:MM:SS/"), config.custom_config.lis, "/")
-        log_directory = string("logs/", config.custom_config.stubborns, "/")
+        #log_directory = string("logs/", config.custom_config.stubborns, "/")
+
+        n_reg_agents = count(x -> x == 0, config.stationary_agents)
+        n_SN = config.n_agents - n_reg_agents
+
+        node_position = "EXTREMA" # or "EVEN SPREAD" 
+        
+        log_directory = string("logs/$(n_reg_agents)A$(n_SN)SN/$(node_position)/$(config.anomaly_likelihood_multiplier)/$(config.custom_config.stubborns)/")
 
         if !isdir(log_directory)
             Base.Filesystem.mkpath(log_directory)
@@ -77,6 +84,10 @@ struct Logger
                 println(f, "check_los: $(config.check_los)")
                 println(f, "timeout: $(config.timeout)")
                 println(f, "custom_config: $(config.custom_config)")
+                println(f, "stationary_agents: $(config.stationary_agents)")
+                println(f, "anomaly_chance_per_step: $(config.anomaly_chance_per_step)")
+                println(f, "anomaly_duration: $(config.anomaly_duration)")
+                println(f, "agent_starts: $(config.agent_starts)")
             end
         end
 
@@ -191,7 +202,6 @@ struct WorldState
     paths::Graphs.FloydWarshallState  # Has fields dists, parents (for back-to-front navigation)
     time::Real
     done::Bool
-    observed_anomalies::Array{Tuple{Int64, Int64}, 1}
     
     
     function WorldState(nodes::Array{<:AbstractNode, 1},
@@ -203,7 +213,6 @@ struct WorldState
                         paths::Union{Graphs.AbstractPathState, Nothing}=nothing,
                         time::Float64=0.0, 
                         done::Bool=false,
-                        observed_anomalies::Array{Tuple{Int64, Int64}, 1}=[(0,0)]
                         )
         # TODO: sort all this out properly
 
@@ -215,9 +224,9 @@ struct WorldState
 
         if paths === nothing
             generated_paths = floyd_warshall_shortest_paths(map)
-            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, generated_paths, time, done, observed_anomalies)
+            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, generated_paths, time, done)
         else
-            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, paths, time, done, observed_anomalies)
+            new(nodes, n_nodes, map, obstacle_map, scale_factor, new_adj, paths, time, done)
         end
     end
 end
@@ -238,10 +247,11 @@ mutable struct AgentValues
     anomalous::Tuple{Bool, Int64} #anomalous, and timestep they became anomalous
     time_to_respond_log::Int64
     reward_log::Int64
+    observed_anomalies::Array{Tuple{Int64, Int64}, 1}
 
 
     function AgentValues(id, custom_config, stationary_flag, n_agents::Int64, n_nodes::Int64)
-        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0),0,0) #hardcoded number of responses to 4 as expecting 4 agents
+        new(custom_config.stubborns[id], stationary_flag, 0.0, zeros(Int64, n_agents), zeros(Float64, n_nodes), n_agents, (true, 0), [], (false, 0),0,0,[]) #hardcoded number of responses to 4 as expecting 4 agents
     end
 end
 
@@ -332,9 +342,9 @@ end
 struct ObservedNodeMessage <: AbstractMessage
     source::Int64
     targets::Union{Array{Int64, 1}, Nothing}
-    message::Tuple{Int64, Int64}
+    message::Tuple{Int64, Float64}
 
-    function ObservedNodeMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Tuple{Int64, Int64})
+    function ObservedNodeMessage(agent::AgentState, targets::Union{Array{Int64, 1}, Nothing}, message::Tuple{Int64, Float64})
         new(agent.id, targets, message)
     end
 end

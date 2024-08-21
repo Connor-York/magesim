@@ -1,22 +1,30 @@
 module AgentHandler
 
-import ..Types: AgentState, WorldState, Position, StepTowardsAction, Config
+import ..World: stop_world
+import ..Types: AgentState, WorldState, Position, StepTowardsAction, Config, Node
 import ..Agent: agent_step!, make_decisions!, observe_world!
 import ..MessagePasser: pass_messages!
 
 using DataStructures
+using Random
 
 """
     spawn_agents(agent_count::Int64, start_nodes::Array{Int64, 1}, world::WorldState)
 
 Create agents at specified nodes in the world and return them in an array
 """
-function spawn_agents(world::WorldState, config::Config)
+function spawn_agents(world::WorldState, config::Config, anomaly_duration::Int64)
 
     agent_count = config.n_agents
     start_nodes = config.agent_starts
     
     agents = Array{AgentState, 1}(undef, agent_count)
+
+    num_reg_agents = count(x -> x == 0, config.stationary_agents)
+    println("Number of regular agents: ", num_reg_agents)
+
+    # Shuffle the stubborns array to randomise the stubbornness of agents
+    shuffle!(view(config.custom_config.stubborns,1:num_reg_agents))
 
     for i = 1:agent_count
         agents[i] = AgentState(
@@ -30,7 +38,7 @@ function spawn_agents(world::WorldState, config::Config)
             config.agent_speed,
             config.custom_config,
             config.stationary_agents[i])
-        observe_world!(agents[i], world)
+        observe_world!(agents[i], world, anomaly_duration)
     end
 
     return agents
@@ -61,7 +69,7 @@ function step_agents!(agents::Array{AgentState, 1},
                 empty!(agent.action_queue)
                 enqueue!(agent.action_queue, StepTowardsAction(force_actions[agent.id]))
             else
-                make_decisions!(agent, anomaly_duration)
+                make_decisions!(agent)
             end
         end
     
@@ -70,7 +78,30 @@ function step_agents!(agents::Array{AgentState, 1},
         end
     
         Threads.@threads for agent in agents
-            observe_world!(agent, world)
+            observe_world!(agent, world, anomaly_duration)
+        end
+
+        gained_reward = 0
+        possible_reward = 0
+
+        for node in world.nodes
+            if node isa Node
+                possible_reward += node.values.anomaly_counter
+            end
+        end
+
+
+
+        for agent in agents
+            gained_reward += agent.values.reward_log
+        end
+
+        #println("++++++++++++++++++++++++++++ Possible Reward = $(possible_reward), Gained Reward = $(gained_reward) ++++++++++++++++++++++++++++")
+        if possible_reward < gained_reward
+            println("################################################################ruhroh################################################################")
+            while true
+                continue
+            end
         end
 
     else
